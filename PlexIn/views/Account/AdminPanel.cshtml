@@ -1,0 +1,15 @@
+﻿@{
+    ViewBag.Title = "Admin Panel";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+}
+
+
+
+<h2>Welcome, @ViewBag.Username!</h2>
+
+<div>
+    <button onclick="window.location.href='/Account/ManageMenu'">Menu</button>
+    <button onclick="window.location.href='/Account/ManageComments'">Comments</button>
+    <button onclick="window.location.href='/Account/Logout'">Logout</button>
+</div>
