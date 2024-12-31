@@ -1,0 +1,61 @@
+﻿@{
+    ViewData["Title"] = "محصولی وجود ندارد";
+}
+
+<h1>محصولی وجود ندارد</h1>
+<p>در حال حاضر هیچ محصولی در سیستم ثبت نشده است.</p>
+<a href="/Products/Create" class="btn btn-primary">اضافه کردن محصول جدید</a>
+
+<a href="/Categories" class="btn btn-primary">مدیریت دسته‌بندی‌ها</a>
+<a href="/Features" class="btn btn-primary">مدیریت ویژگی‌ها</a>
+
+
+<h2>ساخت ویژگی جدید</h2>
+<form method="post" asp-action="CreateFeature">
+    <div class="mb-3">
+        <label for="featureName">نام ویژگی</label>
+        <input type="text" name="featureName" id="featureName" class="form-control" required />
+    </div>
+    <div class="mb-3" id="options">
+        <label>گزینه‌ها</label>
+        <input type="text" name="options" class="form-control mb-2" />
+    </div>
+    <button type="button" class="btn btn-secondary" onclick="addOption()">+ گزینه دیگر</button>
+    <button type="submit" class="btn btn-primary">ایجاد ویژگی</button>
+</form>
+<script>
+    function addOption() {
+        const container = document.getElementById('options');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'options';
+        input.classList.add('form-control', 'mb-2');
+        container.appendChild(input);
+    }
+</script>
+
+
+<h2>ساخت دسته‌بندی جدید</h2>
+<form method="post" asp-action="CreateCategory">
+    <div class="mb-3">
+        <label for="categoryName">نام دسته‌بندی</label>
+        <input type="text" name="categoryName" id="categoryName" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">ایجاد دسته‌بندی</button>
+</form>
+
+
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}

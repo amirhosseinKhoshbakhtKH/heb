@@ -1,0 +1,52 @@
+﻿@page
+@using PlexIn.Models
+@model IEnumerable<Product>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+}
+<a href="/Products/Create" class="btn btn-primary">محصول جدید</a>
+<a href="/Categories" class="btn btn-primary">مدیریت دسته‌بندی‌ها</a>
+<a href="/Features" class="btn btn-primary">مدیریت ویژگی‌ها</a>
+
+
+
+<h1>محصولات</h1>
+
+@if (Model == null )
+{
+    <p>محصولی برای نمایش وجود ندارد.</p>
+}
+else if (!Model.Any())
+{
+    <p>محصولی برای نمایش وجود ندارد.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>نام محصول</th>
+                <th>توضیحات</th>
+                <th>قیمت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Description</td>
+                    <td>@product.Price</td>
+                    <td>
+                        <form method="post" asp-action="Delete" asp-route-id="@product.Id">
+                            <button type="submit" class="btn btn-danger">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

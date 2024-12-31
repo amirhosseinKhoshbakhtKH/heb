@@ -1,0 +1,25 @@
+﻿<h1>مدیریت ویژگی‌ها</h1>
+
+<form method="post" asp-action="AddFeature">
+    <div class="mb-3">
+        <label>نام ویژگی</label>
+        <input type="text" name="featureName" class="form-control" required />
+    </div>
+    <div class="mb-3" id="options">
+        <label>گزینه‌ها</label>
+        <input type="text" name="options" class="form-control mb-2" required />
+    </div>
+    <button type="button" class="btn btn-secondary" onclick="addOption()">+ گزینه دیگر</button>
+    <button type="submit" class="btn btn-primary">ثبت</button>
+</form>
+
+<script>
+    function addOption() {
+        const container = document.getElementById('options');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'options';
+        input.classList.add('form-control', 'mb-2');
+        container.appendChild(input);
+    }
+</script>

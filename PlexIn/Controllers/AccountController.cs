@@ -1,14 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+using PlexIn.Models;
 using System.Security.Claims;
-using System.Text;
 
 public class AccountController : Controller
 {
-
     private readonly AppDbContext _context;
 
     // Constructor برای مقداردهی _context
@@ -23,11 +21,15 @@ public class AccountController : Controller
         return View();
     }
 
-
-    // افزودن به متد Register (HttpPost)
     [HttpPost]
     public async Task<IActionResult> Register(string username, string password)
     {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            ViewBag.Message = "Username and password cannot be empty.";
+            return View();
+        }
+
         // بررسی تکراری نبودن نام کاربر
         if (await _context.Businesses.AnyAsync(b => b.Username == username))
         {
@@ -44,8 +46,8 @@ public class AccountController : Controller
         _context.Businesses.Add(newBusiness);
         await _context.SaveChangesAsync();
 
-        ViewBag.Message = "Registration successful!";
-        return View();
+        TempData["Message"] = "Registration successful! Please log in.";
+        return RedirectToAction("Login");
     }
 
     [HttpGet]
@@ -54,10 +56,15 @@ public class AccountController : Controller
         return View();
     }
 
-
     [HttpPost]
     public async Task<IActionResult> Login(string username, string password)
     {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            ViewBag.Message = "Username and password cannot be empty.";
+            return View();
+        }
+
         var business = await _context.Businesses.SingleOrDefaultAsync(b => b.Username == username);
 
         if (business == null || !BCrypt.Net.BCrypt.Verify(password, business.Password))
@@ -66,33 +73,19 @@ public class AccountController : Controller
             return View();
         }
 
-        // تولید توکن JWT
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes("mymyselfVeryStrongSecretKeyWithMinimum32Characters!");
-        var tokenDescriptor = new SecurityTokenDescriptor
+        // ایجاد Claims برای کاربر
+        var claims = new List<Claim>
         {
-            Subject = new ClaimsIdentity(new[]
-            {
             new Claim(ClaimTypes.Name, business.Username),
-            new Claim("Role", "Admin") // نقش ادمین
-        }),
-            Expires = DateTime.UtcNow.AddHours(1),
-            Issuer = "yourapp.com",
-            Audience = "yourapp.com",
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            new Claim("BusinessId", business.Id.ToString()) // ذخیره BusinessId
         };
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        var tokenString = tokenHandler.WriteToken(token);
+        var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
 
-        // ذخیره توکن در کوکی یا فرانت‌اند
-        HttpContext.Response.Cookies.Append("AuthToken", tokenString, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = false, // در محیط تولید این مقدار را به true تغییر بده
-            SameSite = SameSiteMode.Strict
-        });
+        // ورود کاربر
+        await HttpContext.SignInAsync("Cookies", new ClaimsPrincipal(claimsIdentity));
 
+        TempData["Message"] = "Login successful! Welcome to the Admin Panel.";
         return RedirectToAction("AdminPanel", "Account");
     }
 
@@ -107,27 +100,22 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult AdminPanel()
     {
-        Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-        Response.Headers["Pragma"] = "no-cache";
-        Response.Headers["Expires"] = "0";
+        var username = User.Identity?.Name; // دریافت نام کاربری
+        var businessId = User.Claims.FirstOrDefault(c => c.Type == "BusinessId")?.Value; // دریافت BusinessId
 
-        if (!User.Identity.IsAuthenticated)
-        {
-            return RedirectToAction("Login", "Account");
-        }
-
-        var username = User.Identity?.Name; // نام کاربر از توکن JWT
         ViewBag.Username = username;
+        ViewBag.BusinessId = businessId;
+
         return View();
     }
 
     [HttpGet]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        // حذف توکن از کوکی
-        HttpContext.Response.Cookies.Delete("AuthToken");
-        // هدایت به صفحه لاگین
+        // خروج کاربر
+        await HttpContext.SignOutAsync("Cookies");
+
+        TempData["Message"] = "You have been logged out successfully.";
         return RedirectToAction("Login");
     }
-
 }

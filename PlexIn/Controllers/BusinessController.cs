@@ -3,6 +3,7 @@
     using BCrypt.Net;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
+    using PlexIn.Models;
 
     [ApiController]
     [Route("api/[controller]")]
