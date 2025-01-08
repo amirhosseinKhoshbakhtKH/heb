@@ -16,18 +16,17 @@ public class CategoriesController : Controller
     // نمایش لیست دسته‌بندی‌ها
     public async Task<IActionResult> Index()
     {
-        // دریافت BusinessId از کاربر لاگین‌شده
         var businessIdClaim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
         if (businessIdClaim == null)
         {
             TempData["Error"] = "اطلاعات بیزنس لاگین‌شده یافت نشد.";
-            return RedirectToAction("Logout", "Account"); // به صفحه خروج هدایت شود
+            return RedirectToAction("Logout", "Account");
         }
 
         int businessId = int.Parse(businessIdClaim.Value);
 
-        // فیلتر دسته‌بندی‌ها برای این بیزنس
         var categories = await _context.Categories
+            .Include(c => c.Business)
             .Where(c => c.BusinessId == businessId)
             .ToListAsync();
 
@@ -35,20 +34,19 @@ public class CategoriesController : Controller
     }
 
 
+
     public IActionResult Create()
     {
         return View();
     }
 
-
-    // ساخت دسته‌بندی جدید
     [HttpPost]
     public async Task<IActionResult> Create(string categoryName)
     {
         if (string.IsNullOrEmpty(categoryName))
         {
             TempData["Error"] = "نام دسته‌بندی نمی‌تواند خالی باشد.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Create));
         }
 
         // دریافت businessId از کاربر لاگین‌شده
@@ -78,19 +76,36 @@ public class CategoriesController : Controller
 
     // حذف دسته‌بندی
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
-        if (category == null)
+        // دریافت BusinessId کاربر لاگین‌شده
+        var businessIdClaim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
+        if (businessIdClaim == null)
         {
-            TempData["Error"] = "دسته‌بندی یافت نشد.";
+            TempData["Error"] = "اطلاعات بیزنس لاگین‌شده یافت نشد.";
             return RedirectToAction(nameof(Index));
         }
 
+        int businessId = int.Parse(businessIdClaim.Value);
+
+        // پیدا کردن دسته‌بندی مربوطه
+        var category = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == id && c.BusinessId == businessId);
+
+        if (category == null)
+        {
+            TempData["Error"] = "دسته‌بندی یافت نشد یا به شما تعلق ندارد.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // حذف دسته‌بندی
         _context.Categories.Remove(category);
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "دسته‌بندی با موفقیت حذف شد.";
         return RedirectToAction(nameof(Index));
     }
+
+
 }

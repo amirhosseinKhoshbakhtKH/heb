@@ -44,24 +44,24 @@ public class AppDbContext : DbContext
             .HasForeignKey(pi => pi.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Product و ProductFeature
         modelBuilder.Entity<ProductFeature>()
-            .HasOne(pf => pf.Product)
-            .WithMany(p => p.ProductFeatures)
-            .HasForeignKey(pf => pf.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+        .HasOne(pf => pf.Product)
+        .WithMany(p => p.ProductFeatures)
+        .HasForeignKey(pf => pf.ProductId)
+        .OnDelete(DeleteBehavior.Cascade); // حذف Product باعث حذف ProductFeature شود
 
         modelBuilder.Entity<ProductFeature>()
             .HasOne(pf => pf.Feature)
             .WithMany()
             .HasForeignKey(pf => pf.FeatureId)
-            .OnDelete(DeleteBehavior.Restrict); // حذف ویژگی نباید ProductFeature را حذف کند
+            .OnDelete(DeleteBehavior.Cascade); // حذف Feature باعث حذف ProductFeature شود
 
         modelBuilder.Entity<ProductFeature>()
-            .HasOne(pf => pf.Option)
+            .HasOne(pf => pf.FeatureOption)
             .WithMany()
-            .HasForeignKey(pf => pf.OptionId)
-            .OnDelete(DeleteBehavior.Restrict); // حذف گزینه نباید ProductFeature را حذف کند
+            .HasForeignKey(pf => pf.FeatureOptionId)
+            .OnDelete(DeleteBehavior.Restrict); // جلوگیری از حذف FeatureOption اگر در ProductFeature استفاده شده است
+
 
         base.OnModelCreating(modelBuilder);
     }

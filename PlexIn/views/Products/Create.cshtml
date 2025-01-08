@@ -1,41 +1,124 @@
-﻿<h1>ساخت محصول جدید</h1>
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<h1>ایجاد محصول جدید</h1>
+@Html.ValidationSummary(false, "لطفاً خطاهای زیر را بررسی کنید:")
 
-<form method="post">
+<form asp-action="Create" method="post" ...>
+    ...
+</form>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    <!-- نام محصول -->
     <div class="mb-3">
-        <label>نام محصول</label>
-        <input type="text" name="Name" class="form-control" required />
+        <label for="productName" class="form-label">نام محصول</label>
+        <input type="text" class="form-control" id="productName" name="Name" required />
     </div>
+
+    <!-- توضیحات -->
     <div class="mb-3">
-        <label>توضیحات</label>
-        <textarea name="Description" class="form-control"></textarea>
+        <label for="description" class="form-label">توضیحات</label>
+        <textarea class="form-control" id="description" name="Description" rows="4"></textarea>
     </div>
+
+    <!-- قیمت -->
     <div class="mb-3">
-        <label>قیمت</label>
-        <input type="number" name="Price" class="form-control" required />
+        <label for="price" class="form-label">قیمت</label>
+        <input type="number" class="form-control" id="price" name="Price" step="0.01" required />
     </div>
+
+    <!-- دسته‌بندی -->
     <div class="mb-3">
-        <label>دسته‌بندی</label>
-        <select name="CategoryId" class="form-control">
-            @foreach (var category in ViewBag.Categories)
+        <label for="category" class="form-label">دسته‌بندی</label>
+        <select class="form-select" id="category" name="CategoryId" required>
+            @foreach (var category in ViewBag.Categories as List<PlexIn.Models.Category>)
             {
                 <option value="@category.Id">@category.Name</option>
             }
         </select>
     </div>
 
-    <h2>ویژگی‌ها</h2>
-    @foreach (var feature in ViewBag.Features)
-    {
-        <div class="mb-3">
-            <label>@feature.Name</label>
-            <select name="featureIds" class="form-control">
-                @foreach (var option in feature.Options)
+    <!-- ویژگی‌ها -->
+    <div id="features-container" class="mb-3">
+        <label class="form-label">ویژگی‌ها</label>
+        <div class="input-group mb-2 feature-row">
+            <select class="form-select feature-select" name="Features[0].FeatureId" required>
+                <option value="">انتخاب ویژگی</option>
+                @foreach (var feature in ViewBag.Features as List<PlexIn.Models.Feature>)
                 {
-                    <option value="@option.Id">@option.Value</option>
+                    <option value="@feature.Id">@feature.Name</option>
                 }
             </select>
+            <select class="form-select feature-option-select" name="Features[0].FeatureOptionId" required>
+                <option value="">انتخاب مقدار</option>
+            </select>
+            <button type="button" class="btn btn-success add-feature">+</button>
         </div>
-    }
+    </div>
 
-    <button type="submit" class="btn btn-primary">ثبت محصول</button>
+    <!-- آپلود عکس‌ها -->
+    <div class="mb-3">
+        <label class="form-label">آپلود تصاویر (حداکثر 10 عکس)</label>
+        <input type="file" class="form-control" name="Images" multiple accept="image/*" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">ایجاد محصول</button>
+    <a href="/Products" class="btn btn-secondary">بازگشت</a>
 </form>
+
+<!-- جاوااسکریپت -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const featuresContainer = document.getElementById('features-container');
+        let featureIndex = 1;
+
+        // تغییر مقدار ویژگی‌ها به صورت داینامیک
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('feature-select')) {
+                const featureId = e.target.value;
+                const optionSelect = e.target.closest('.feature-row').querySelector('.feature-option-select');
+
+                if (featureId) {
+                    fetch(`/Features/GetOptions?featureId=${featureId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            optionSelect.innerHTML = '<option value="">انتخاب مقدار</option>';
+                            data.forEach(option => {
+                                const optionElement = document.createElement('option');
+                                optionElement.value = option.id;
+                                optionElement.textContent = option.value;
+                                optionSelect.appendChild(optionElement);
+                            });
+                        });
+                } else {
+                    optionSelect.innerHTML = '<option value="">انتخاب مقدار</option>';
+                }
+            }
+        });
+
+        // اضافه کردن ویژگی جدید
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('add-feature')) {
+                const newFeatureRow = document.createElement('div');
+                newFeatureRow.className = 'input-group mb-2 feature-row';
+                newFeatureRow.innerHTML = `
+                    <select class="form-select feature-select" name="Features[${featureIndex}].FeatureId" required>
+                        <option value="">انتخاب ویژگی</option>
+    @foreach (var feature in ViewBag.Features as List<PlexIn.Models.Feature>)
+    {
+                                <option value="@feature.Id">@feature.Name</option>
+    }
+                    </select>
+                    <select class="form-select feature-option-select" name="Features[${featureIndex}].FeatureOptionId" required>
+                        <option value="">انتخاب مقدار</option>
+                    </select>
+                    <button type="button" class="btn btn-danger remove-feature">-</button>
+                `;
+                featuresContainer.appendChild(newFeatureRow);
+                featureIndex++;
+            } else if (e.target.classList.contains('remove-feature')) {
+                e.target.parentElement.remove();
+            }
+        });
+    });
+</script>

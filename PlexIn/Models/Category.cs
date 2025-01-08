@@ -19,6 +19,6 @@ namespace PlexIn.Models
         [ForeignKey("BusinessId")]
         public Business Business { get; set; }
 
-        public ICollection<Product> Products { get; set; } // محصولات مرتبط با این دسته
+        public ICollection<Product>? Products { get; set; } // محصولات مرتبط با این دسته
     }
 }

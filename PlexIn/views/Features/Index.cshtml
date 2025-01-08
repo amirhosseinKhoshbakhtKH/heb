@@ -1,4 +1,62 @@
-﻿@page
-@model PlexIn.views.Features.IndexModel
+﻿@model IEnumerable<PlexIn.Models.Feature>
 @{
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
+<h1>مدیریت ویژگی‌ها</h1>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<a href="/Features/Create" class="btn btn-primary mb-3">ایجاد ویژگی جدید</a>
+
+@if (Model == null || !Model.Any())
+{
+    <p>ویژگی‌ای برای نمایش وجود ندارد.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>نام ویژگی</th>
+                <th>مقادیر</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var feature in Model)
+            {
+                <tr>
+                    <td>@feature.Name</td>
+                    <td>
+                        @if (feature.Options != null && feature.Options.Any())
+                        {
+                            <ul>
+                                @foreach (var option in feature.Options)
+                                {
+                                    <li>@option.Value</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p>هیچ مقداری موجود نیست.</p>
+                        }
+                    </td>
+                    <td>
+                        <form asp-action="Delete" asp-controller="Features" method="post" asp-route-id="@feature.Id">
+                            <button type="submit" class="btn btn-danger">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<a href="/Products" class="btn btn-secondary">بازگشت به لیست ‌محصولات‌</a>

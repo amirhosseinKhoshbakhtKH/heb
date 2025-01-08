@@ -48,47 +48,118 @@ public class ProductsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // نمایش فرم ساخت محصول جدید
-    public IActionResult Create()
+    private async Task PopulateViewBags(int businessId)
     {
-        ViewBag.Features = _context.Features
-            .Include(f => f.Options)
-            .Where(f => f.BusinessId == 1) // شناسه بیزنس فعلی
-            .ToList();
+        ViewBag.Categories = await _context.Categories
+            .Where(c => c.BusinessId == businessId)
+            .ToListAsync();
 
-        ViewBag.Categories = _context.Categories.ToList(); // دسته‌بندی‌ها
+        ViewBag.Features = await _context.Features
+            .Where(f => f.BusinessId == businessId)
+            .ToListAsync();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Create()
+    {
+        var businessIdClaim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
+        if (businessIdClaim == null)
+        {
+            TempData["Error"] = "اطلاعات بیزنس لاگین‌شده یافت نشد.";
+            return RedirectToAction("Logout", "Account");
+        }
+        int businessId = int.Parse(businessIdClaim.Value);
+
+        await PopulateViewBags(businessId);
+
         return View();
     }
 
-    // ساخت محصول جدید
     [HttpPost]
-    public async Task<IActionResult> Create(Product product, List<int> featureIds, List<int> optionIds)
+    public async Task<IActionResult> Create(Product product, List<ProductFeature> Features, List<IFormFile> Images)
     {
-        if (ModelState.IsValid)
+        Console.WriteLine($"Product: {product.Name}, {product.Price}, {product.CategoryId}");
+        if (Features != null)
         {
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-
-            // ذخیره ویژگی‌ها و گزینه‌ها برای محصول
-            for (int i = 0; i < featureIds.Count; i++)
+            foreach (var feature in Features)
             {
-                _context.ProductFeatures.Add(new ProductFeature
-                {
-                    ProductId = product.Id,
-                    FeatureId = featureIds[i],
-                    OptionId = optionIds[i]
-                });
+                Console.WriteLine($"FeatureId: {feature.FeatureId}, FeatureOptionId: {feature.FeatureOptionId}");
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
         }
 
-        // اگر مدل نامعتبر بود، دوباره داده‌ها را به View بفرست
-        ViewBag.Features = _context.Features.Include(f => f.Options).ToList();
-        ViewBag.Categories = _context.Categories.ToList();
-        return View(product);
+        if (Images != null)
+        {
+            foreach (var image in Images)
+            {
+                Console.WriteLine($"Image: {image.FileName}");
+            }
+        }
+        var businessIdClaim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
+        if (businessIdClaim == null)
+        {
+            TempData["Error"] = "اطلاعات بیزنس لاگین‌شده یافت نشد.";
+            return RedirectToAction("Logout", "Account");
+        }
+        int businessId = int.Parse(businessIdClaim.Value);
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            // یا در یک breakpoint قرار دهید و errorMessages را بررسی کنید
+            foreach (var err in errorMessages)
+            {
+                Console.WriteLine(err); // یا هر لاگ دیگری
+            }
+
+            TempData["Error"] = "اطلاعات وارد شده کامل نیست.";
+            await PopulateViewBags(businessId);
+            return View(product);
+        }
+
+        // ذخیره محصول
+        _context.Products.Add(product);
+        await _context.SaveChangesAsync();
+
+
+        // ذخیره ویژگی‌های محصول
+        if (Features != null)
+        {
+            foreach (var feature in Features)
+            {
+                if (feature.FeatureId > 0 && feature.FeatureOptionId > 0)
+                {
+                    feature.ProductId = product.Id;
+                    _context.ProductFeatures.Add(feature);
+                }
+            }
+        }
+
+        // ذخیره تصاویر محصول
+        if (Images != null && Images.Any())
+        {
+            foreach (var image in Images)
+            {
+                if (image.Length > 0)
+                {
+                    var filePath = Path.Combine("wwwroot/images/products", image.FileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await image.CopyToAsync(stream);
+                    }
+                    _context.ProductImages.Add(new ProductImage
+                    {
+                        ProductId = product.Id,
+                        Url = $"/images/products/{image.FileName}"
+                    });
+                }
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        TempData["Success"] = "محصول با موفقیت ایجاد شد.";
+        return RedirectToAction("Index");
     }
+
+
 
 
     // مدیریت ویژگی‌ها

@@ -12,6 +12,6 @@ namespace PlexIn.Models
 
         public Business Business { get; set; }
 
-        public ICollection<Product> Products { get; set; } = new List<Product>();
+        public ICollection<Product>? Products { get; set; } = new List<Product>();
     }
 }

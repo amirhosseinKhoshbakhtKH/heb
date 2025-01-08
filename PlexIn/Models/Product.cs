@@ -12,21 +12,20 @@ namespace PlexIn.Models
         [MaxLength(100)]
         public string Name { get; set; }
 
-        public string Description { get; set; }
-        public decimal Price { get; set; }
+        public string? Description { get; set; }
+        public decimal? Price { get; set; }
 
         // ارتباط با Category
         [Required]
         public int CategoryId { get; set; }
-        public Category Category { get; set; }
+        public Category? Category { get; set; }
 
         // ارتباط با Menu
-        [Required]
-        public int MenuId { get; set; }
-        public Menu Menu { get; set; }
+        public int? MenuId { get; set; }
+        public Menu? Menu { get; set; }
 
         // سایر روابط
-        public ICollection<ProductFeature> ProductFeatures { get; set; }
-        public ICollection<ProductImage> ProductImages { get; set; }
+        public ICollection<ProductFeature>? ProductFeatures { get; set; }
+        public ICollection<ProductImage>? ProductImages { get; set; }
     }
 }

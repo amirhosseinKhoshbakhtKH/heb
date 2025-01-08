@@ -2,14 +2,19 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>ایجاد دسته‌بندی جدید</h1>
+<h1>ساخت دسته‌بندی جدید</h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <form asp-action="Create" method="post">
     <div class="form-group">
         <label for="categoryName">نام دسته‌بندی</label>
         <input type="text" class="form-control" id="categoryName" name="categoryName" placeholder="نام دسته‌بندی را وارد کنید" required />
     </div>
-    <button type="submit" class="btn btn-primary">ساخت دسته‌بندی</button>
+    <button type="submit" class="btn btn-primary">ایجاد</button>
 </form>
 
 <a href="/Categories" class="btn btn-secondary">بازگشت به لیست دسته‌بندی‌ها</a>

@@ -14,8 +14,8 @@ namespace PlexIn.Models
         [Required]
         public int BusinessId { get; set; }
 
-        public Business Business { get; set; }
+        public Business? Business { get; set; }
 
-        public ICollection<FeatureOption> Options { get; set; } = new List<FeatureOption>();
+        public ICollection<FeatureOption>? Options { get; set; } = new List<FeatureOption>();
     }
 }

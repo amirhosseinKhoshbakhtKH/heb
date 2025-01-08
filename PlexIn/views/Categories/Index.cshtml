@@ -1,5 +1,9 @@
 ﻿@model IEnumerable<PlexIn.Models.Category>
 
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
 <h1>مدیریت دسته‌بندی‌ها</h1>
 
 @if (TempData["Success"] != null)
@@ -38,15 +42,20 @@ else
                     <td>@category.Name</td>
                     <td>@category.Business?.Username</td>
                     <td>
-                        <form method="post" asp-action="Delete" asp-route-id="@category.Id">
+                        <form asp-action="Delete" asp-controller="Categories" method="post" asp-route-id="@category.Id">
+                            @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-danger">
                                 <i class="bi bi-trash"></i> حذف
                             </button>
                         </form>
+
+
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 }
-<a asp-action="Create" asp-controller="Categories" style="display: inline-block; padding: 10px 15px; background-color: blue; color: white; text-decoration: none; border-radius: 5px;">ساخت دسته‌بندی جدید</a>
+<a href="/Categories/Create" class="btn btn-primary">ساخت دسته‌بندی جدید</a>
+<a href="/Products" class="btn btn-secondary">بازگشت به لیست ‌محصولات‌</a>
+

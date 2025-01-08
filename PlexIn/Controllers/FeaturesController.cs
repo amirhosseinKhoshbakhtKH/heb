@@ -16,36 +16,63 @@ public class FeaturesController : Controller
     // نمایش لیست ویژگی‌ها
     public async Task<IActionResult> Index()
     {
+        var businessIdClaim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
+        if (businessIdClaim == null)
+        {
+            TempData["Error"] = "اطلاعات بیزنس لاگین‌شده یافت نشد.";
+            return RedirectToAction("Logout", "Account");
+        }
+
+        int businessId = int.Parse(businessIdClaim.Value);
+
         var features = await _context.Features
-            .Include(f => f.Options)
+            .Include(f => f.Options) // بارگذاری مقادیر ویژگی
+            .Where(f => f.BusinessId == businessId)
             .ToListAsync();
-        return View(features);
+
+        return View(features); // ارسال لیست به ویو
+    }
+
+    // متد GET برای نمایش فرم
+    [HttpGet]
+    public IActionResult Create()
+    {
+        return View(); // نمایش فرم ساخت ویژگی
     }
 
     // ساخت ویژگی جدید
     [HttpPost]
-    public async Task<IActionResult> Create(string featureName, List<string> options)
+    public async Task<IActionResult> Create(string featureName, List<FeatureOption> Options)
     {
-        if (string.IsNullOrEmpty(featureName))
+        if (string.IsNullOrEmpty(featureName) || Options == null || !Options.Any())
         {
-            TempData["Error"] = "نام ویژگی نمی‌تواند خالی باشد.";
-            return RedirectToAction(nameof(Index));
+            TempData["Error"] = "نام ویژگی و حداقل یک مقدار باید وارد شود.";
+            return RedirectToAction(nameof(Create));
         }
 
-        var feature = new Feature { Name = featureName, BusinessId = 1 };
+        var businessIdClaim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
+        if (businessIdClaim == null)
+        {
+            TempData["Error"] = "اطلاعات بیزنس لاگین‌شده یافت نشد.";
+            return RedirectToAction("Logout", "Account");
+        }
+
+        int businessId = int.Parse(businessIdClaim.Value);
+
+        var feature = new Feature
+        {
+            Name = featureName,
+            BusinessId = businessId,
+            Options = Options
+        };
+
         _context.Features.Add(feature);
-        await _context.SaveChangesAsync();
-
-        foreach (var option in options.Where(o => !string.IsNullOrWhiteSpace(o)))
-        {
-            _context.FeatureOptions.Add(new FeatureOption { FeatureId = feature.Id, Value = option });
-        }
-
         await _context.SaveChangesAsync();
 
         TempData["Success"] = "ویژگی جدید با موفقیت ایجاد شد.";
         return RedirectToAction(nameof(Index));
     }
+
 
     // حذف ویژگی
     [HttpPost]
@@ -68,4 +95,17 @@ public class FeaturesController : Controller
         TempData["Success"] = "ویژگی با موفقیت حذف شد.";
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOptions(int featureId)
+    {
+        var options = await _context.FeatureOptions
+            .Where(o => o.FeatureId == featureId)
+            .Select(o => new { o.Id, o.Value })
+            .ToListAsync();
+
+        return Json(options);
+    }
+
+
 }
